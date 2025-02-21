@@ -1,56 +1,23 @@
+# 🚀 PayPal Payment Gateway Plugin  
 
-Welcome to the Starter Plugin! This plugin is designed to provide a simple and effective way to integrate with your application using the Webito Plugin SDK.
+This is an open-source **PayPal payment integration** for Webito. It allows users to accept secure PayPal payments with minimal setup. Simply **activate the plugin**, enter your **PayPal Client ID & Secret**, and start processing transactions!  
 
-## Features
+## ✨ Features  
+- 🔒 Secure PayPal payment processing  
+- 🔄 Automatic transaction verification  
+- ⚡ Seamless integration—just activate & configure  
+- 💳 Supports multiple currencies  
 
-- **Easy Integration**: Quickly integrate with your existing application.
-- **Hooks**: Utilize hooks like `messagesCreate` and `productsCreate` to extend functionality.
-- **Asynchronous Operations**: Leverage asynchronous operations for better performance.
+## 🔧 How It Works  
+1. Activate the plugin in **Webito**.  
+2. Enter your **PayPal Client ID & Secret**.  
+3. Customers can now pay via PayPal on your site.  
 
-## Installation
+## 🔗 Customization & Forking  
+This plugin is **open-source**! Developers can:  
+- Fork this repository and modify it as needed.  
+- Upload their own version to **Webito**.  
+- Share the repository link for direct plugin installation.  
 
-To install the Starter Plugin, follow these steps:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/webito-io/webito-plugin-starter
-   cd starter-plugin
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run the plugin:
-   ```bash
-   node dist/index.js
-   ```
-
-## Usage
-
-### Registering Hooks
-
-You can register hooks to handle specific events:
-
-```javascript
-starter.registerHook('messagesCreate', ({ target }) => {
-    // Your logic here
-});
-```
-
-### Executing Hooks
-
-You can execute hooks with the following function:
-
-```javascript
-const result = await starter.executeHook('hookName', { data });
-```
-
-## Contributing
-
-We welcome contributions! Please feel free to submit a pull request or open an issue.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📜 License  
+Open-source under the **MIT License**. Contributions are welcome! 🚀  
