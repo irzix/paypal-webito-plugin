@@ -48,67 +48,74 @@ var starter = new webito_plugin_sdk_1.default.WebitoPlugin('starter');
 starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function (_a) {
     var vars = _a.vars, data = _a.data;
     return __awaiter(void 0, void 0, void 0, function () {
-        var datainput, config1;
-        return __generator(this, function (_b) {
-            datainput = qs_1.default.stringify({
-                'grant_type': 'client_credentials',
-                'ignoreCache': 'true',
-                'return_authn_schemes': 'true',
-                'return_client_metadata': 'true',
-                'return_unconsented_scopes': 'true'
-            });
-            config1 = {
-                method: 'post',
-                maxBodyLength: Infinity,
-                url: 'https://api-m.sandbox.paypal.com/v1/oauth2/token',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': "Basic ".concat(Buffer.from(vars.CLIENT_ID + ":" + vars.CLIENT_SECRET).toString('base64')),
-                },
-                data: datainput
-            };
-            axios_1.default.request(config1).then(function (response) {
-                var _a;
-                var data_order = JSON.stringify({
-                    "intent": "CAPTURE",
-                    "purchase_units": [
-                        {
-                            "amount": {
-                                "currency_code": data.gateway.currency.code,
-                                "value": data.amount
+        var datainput, config1, response, accessToken, data_order, config2, response_order, error_1;
+        var _b, _c, _d, _e, _f;
+        return __generator(this, function (_g) {
+            switch (_g.label) {
+                case 0:
+                    _g.trys.push([0, 3, , 4]);
+                    datainput = qs_1.default.stringify({
+                        'grant_type': 'client_credentials'
+                    });
+                    config1 = {
+                        method: 'post',
+                        maxBodyLength: Infinity,
+                        url: 'https://api-m.sandbox.paypal.com/v1/oauth2/token',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': "Basic ".concat(Buffer.from(vars.CLIENT_ID + ":" + vars.CLIENT_SECRET).toString('base64'))
+                        },
+                        data: datainput
+                    };
+                    return [4 /*yield*/, axios_1.default.request(config1)];
+                case 1:
+                    response = _g.sent();
+                    accessToken = (_b = response === null || response === void 0 ? void 0 : response.data) === null || _b === void 0 ? void 0 : _b.access_token;
+                    if (!accessToken) {
+                        throw new Error("PayPal authentication failed. No access token received.");
+                    }
+                    data_order = {
+                        "intent": "CAPTURE",
+                        "purchase_units": [
+                            {
+                                "amount": {
+                                    "currency_code": data.gateway.currency.code,
+                                    "value": data.amount
+                                }
                             }
-                        }
-                    ]
-                });
-                var config2 = {
-                    method: 'post',
-                    maxBodyLength: Infinity,
-                    url: 'https://api-m.sandbox.paypal.com/v2/checkout/orders',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=representation',
-                        // 'PayPal-Request-Id': '8dd650e5-272f-42f2-8fd3-372dc13bdccc', 
-                        'Authorization': (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.access_token
-                    },
-                    data: data_order
-                };
-                axios_1.default.request(config2).then(function (response_order) {
-                    var _a, _b, _c;
-                    if (((_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.status) == 'CREATED') {
-                        return {
-                            status: true,
-                            transaction: response_order === null || response_order === void 0 ? void 0 : response_order.data,
-                            url: (_c = (_b = response_order === null || response_order === void 0 ? void 0 : response_order.data) === null || _b === void 0 ? void 0 : _b.links[1]) === null || _c === void 0 ? void 0 : _c.href
-                        };
+                        ]
+                    };
+                    config2 = {
+                        method: 'post',
+                        maxBodyLength: Infinity,
+                        url: 'https://api-m.sandbox.paypal.com/v2/checkout/orders',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation',
+                            'Authorization': "Bearer ".concat(accessToken)
+                        },
+                        data: JSON.stringify(data_order)
+                    };
+                    return [4 /*yield*/, axios_1.default.request(config2)];
+                case 2:
+                    response_order = _g.sent();
+                    if (((_c = response_order === null || response_order === void 0 ? void 0 : response_order.data) === null || _c === void 0 ? void 0 : _c.status) === 'CREATED') {
+                        return [2 /*return*/, {
+                                status: true,
+                                transaction: response_order === null || response_order === void 0 ? void 0 : response_order.data,
+                                url: (_f = (_e = (_d = response_order === null || response_order === void 0 ? void 0 : response_order.data) === null || _d === void 0 ? void 0 : _d.links) === null || _e === void 0 ? void 0 : _e.find(function (link) { return link.rel === "approve"; })) === null || _f === void 0 ? void 0 : _f.href
+                            }];
                     }
                     else {
-                        return {
-                            status: false,
-                        };
+                        return [2 /*return*/, { status: false }];
                     }
-                });
-            });
-            return [2 /*return*/];
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_1 = _g.sent();
+                    console.log(error_1);
+                    return [2 /*return*/, { status: false, error: error_1 }];
+                case 4: return [2 /*return*/];
+            }
         });
     });
 });
