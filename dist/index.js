@@ -123,57 +123,51 @@ starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function 
 starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsVerify, function (_a) {
     var vars = _a.vars, data = _a.data;
     return __awaiter(void 0, void 0, void 0, function () {
-        var datainput, config1, access_axios;
-        var _b;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var authString, config1, accessResponse, accessToken, verifyResponse, paymentStatus, error_2;
+        var _b, _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
-                    datainput = qs_1.default.stringify({
-                        'grant_type': 'client_credentials',
-                        'ignoreCache': 'true',
-                        'return_authn_schemes': 'true',
-                        'return_client_metadata': 'true',
-                        'return_unconsented_scopes': 'true'
-                    });
+                    _d.trys.push([0, 3, , 4]);
+                    authString = Buffer.from("".concat(vars.CLIENT_ID, ":").concat(vars.CLIENT_SECRET)).toString('base64');
                     config1 = {
                         method: 'post',
-                        maxBodyLength: Infinity,
                         url: 'https://api-m.sandbox.paypal.com/v1/oauth2/token',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            'Authorization': "Basic ".concat(Buffer.from(vars.CLIENT_ID + ":" + vars.CLIENT_SECRET).toString('base64'))
+                            'Authorization': "Basic ".concat(authString)
                         },
-                        data: datainput
+                        data: 'grant_type=client_credentials'
                     };
                     return [4 /*yield*/, axios_1.default.request(config1)];
                 case 1:
-                    access_axios = (_b = (_c.sent())) === null || _b === void 0 ? void 0 : _b.data;
-                    axios_1.default.get(('https://api-m.sandbox.paypal.com/v2/checkout/orders/' + data.payment.transaction.id), {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Prefer': 'return=representation',
-                            // 'PayPal-Request-Id': '8dd650e5-272f-42f2-8fd3-372dc13bdccc', 
-                            'Authorization': access_axios === null || access_axios === void 0 ? void 0 : access_axios.access_token
-                        }
-                    })
-                        .then(function (response) {
-                        if (response.data.status == 'COMPLETED') {
-                            return {
-                                status: true,
-                            };
-                        }
-                        else {
-                            return {
-                                status: true,
-                            };
-                        }
-                    })
-                        .catch(function (error) {
-                        return {
-                            status: true,
-                        };
-                    });
-                    return [2 /*return*/];
+                    accessResponse = _d.sent();
+                    accessToken = (_b = accessResponse === null || accessResponse === void 0 ? void 0 : accessResponse.data) === null || _b === void 0 ? void 0 : _b.access_token;
+                    if (!accessToken) {
+                        throw new Error("PayPal authentication failed. No access token received.");
+                    }
+                    return [4 /*yield*/, axios_1.default.get("https://api-m.sandbox.paypal.com/v2/checkout/orders/".concat(data.payment.transaction.id), {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=representation',
+                                'Authorization': "Bearer ".concat(accessToken)
+                            }
+                        })];
+                case 2:
+                    verifyResponse = _d.sent();
+                    paymentStatus = (_c = verifyResponse === null || verifyResponse === void 0 ? void 0 : verifyResponse.data) === null || _c === void 0 ? void 0 : _c.status;
+                    if (paymentStatus === 'COMPLETED') {
+                        return [2 /*return*/, { status: true }]; // پرداخت موفق بوده
+                    }
+                    else {
+                        return [2 /*return*/, { status: false, error: "Payment status is ".concat(paymentStatus) }]; // پرداخت ناموفق
+                    }
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_2 = _d.sent();
+                    console.error("PayPal Verification Error:");
+                    return [2 /*return*/, { status: false, error: error_2 }];
+                case 4: return [2 /*return*/];
             }
         });
     });
