@@ -59,10 +59,11 @@ starter.registerHook(
             let response_order = await axios.request(config2);
 
             if (response_order?.data?.status === 'CREATED') {
+                const link = response_order.data.links.find((item: any) => item.rel == "approve");
                 return {
                     status: true,
-                    transaction: response_order?.data,
-                    url: response_order?.data?.links?.find((link: any) => link.rel === "approve")?.href
+                    transaction: response_order.data,
+                    url: link.href
                 };
             } else {
                 return { status: false };
@@ -78,50 +79,51 @@ starter.registerHook(
 starter.registerHook(
     webito.hooks.paymentsVerify,
     async ({ vars, data }: { vars: { CLIENT_ID: string, CLIENT_SECRET: string }, data: paymentsVerify_input }) => {
-        let datainput = qs.stringify({
-            'grant_type': 'client_credentials',
-            'ignoreCache': 'true',
-            'return_authn_schemes': 'true',
-            'return_client_metadata': 'true',
-            'return_unconsented_scopes': 'true'
-        });
-        let config1 = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: 'https://api-m.sandbox.paypal.com/v1/oauth2/token',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Basic ${Buffer.from(vars.CLIENT_ID + ":" + vars.CLIENT_SECRET).toString('base64')}`
-            },
-            data: datainput
-        };
-        const access_axios = (await axios.request(config1))?.data
+        try {
+            // دریافت access_token
+            let authString = Buffer.from(`${vars.CLIENT_ID}:${vars.CLIENT_SECRET}`).toString('base64');
+            let config1 = {
+                method: 'post',
+                url: 'https://api-m.sandbox.paypal.com/v1/oauth2/token',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Basic ${authString}`
+                },
+                data: 'grant_type=client_credentials'
+            };
 
-        axios.get(('https://api-m.sandbox.paypal.com/v2/checkout/orders/' + data.payment.transaction.id), {
-            headers: {
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation',
-                // 'PayPal-Request-Id': '8dd650e5-272f-42f2-8fd3-372dc13bdccc', 
-                'Authorization': access_axios?.access_token
+            let accessResponse = await axios.request(config1);
+            let accessToken = accessResponse?.data?.access_token;
+
+            if (!accessToken) {
+                throw new Error("PayPal authentication failed. No access token received.");
             }
-        })
-            .then((response: any) => {
-                if (response.data.status == 'COMPLETED') {
-                    return {
-                        status: true,
-                    }
-                } else {
-                    return {
-                        status: true,
+
+            // بررسی وضعیت پرداخت
+            let verifyResponse = await axios.get(
+                `https://api-m.sandbox.paypal.com/v2/checkout/orders/${data.payment.transaction.id}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation',
+                        'Authorization': `Bearer ${accessToken}`
                     }
                 }
-            })
-            .catch((error: any) => {
-                return {
-                    status: true,
-                }
-            });
-    });
+            );
+
+            let paymentStatus = verifyResponse?.data?.status;
+
+            if (paymentStatus === 'COMPLETED') {
+                return { status: true }; // پرداخت موفق بوده
+            } else {
+                return { status: false, error: `Payment status is ${paymentStatus}` }; // پرداخت ناموفق
+            }
+        } catch (error) {
+            console.error("PayPal Verification Error:");
+            return { status: false, error: error };
+        }
+    }
+);
 
 const runPlugin = async (inputData: { hook: string; data: any }) => {
     const result = await starter.executeHook(inputData.hook, inputData.data);
@@ -132,5 +134,5 @@ const runPlugin = async (inputData: { hook: string; data: any }) => {
 process.stdin.on('data', async (input) => {
     const msg = JSON.parse(input.toString());
     const result: any = await runPlugin(msg);
-    starter.response({ status: result?.status, data: result?.data , ...result })
+    starter.response({ status: result?.status, data: result })
 });

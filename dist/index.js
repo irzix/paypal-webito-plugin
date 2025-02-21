@@ -48,12 +48,12 @@ var starter = new webito_plugin_sdk_1.default.WebitoPlugin('starter');
 starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function (_a) {
     var vars = _a.vars, data = _a.data;
     return __awaiter(void 0, void 0, void 0, function () {
-        var datainput, config1, response, accessToken, data_order, config2, response_order, error_1;
-        var _b, _c, _d, _e, _f;
-        return __generator(this, function (_g) {
-            switch (_g.label) {
+        var datainput, config1, response, accessToken, data_order, config2, response_order, link, error_1;
+        var _b, _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
-                    _g.trys.push([0, 3, , 4]);
+                    _d.trys.push([0, 3, , 4]);
                     datainput = qs_1.default.stringify({
                         'grant_type': 'client_credentials'
                     });
@@ -69,7 +69,7 @@ starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function 
                     };
                     return [4 /*yield*/, axios_1.default.request(config1)];
                 case 1:
-                    response = _g.sent();
+                    response = _d.sent();
                     accessToken = (_b = response === null || response === void 0 ? void 0 : response.data) === null || _b === void 0 ? void 0 : _b.access_token;
                     if (!accessToken) {
                         throw new Error("PayPal authentication failed. No access token received.");
@@ -98,12 +98,13 @@ starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function 
                     };
                     return [4 /*yield*/, axios_1.default.request(config2)];
                 case 2:
-                    response_order = _g.sent();
+                    response_order = _d.sent();
                     if (((_c = response_order === null || response_order === void 0 ? void 0 : response_order.data) === null || _c === void 0 ? void 0 : _c.status) === 'CREATED') {
+                        link = response_order.data.links.find(function (item) { return item.rel == "approve"; });
                         return [2 /*return*/, {
                                 status: true,
-                                transaction: response_order === null || response_order === void 0 ? void 0 : response_order.data,
-                                url: (_f = (_e = (_d = response_order === null || response_order === void 0 ? void 0 : response_order.data) === null || _d === void 0 ? void 0 : _d.links) === null || _e === void 0 ? void 0 : _e.find(function (link) { return link.rel === "approve"; })) === null || _f === void 0 ? void 0 : _f.href
+                                transaction: response_order.data,
+                                url: link.href
                             }];
                     }
                     else {
@@ -111,7 +112,7 @@ starter.registerHook(webito_plugin_sdk_1.default.hooks.paymentsCreate, function 
                     }
                     return [3 /*break*/, 4];
                 case 3:
-                    error_1 = _g.sent();
+                    error_1 = _d.sent();
                     console.log(error_1);
                     return [2 /*return*/, { status: false, error: error_1 }];
                 case 4: return [2 /*return*/];
@@ -197,7 +198,7 @@ process_1.default.stdin.on('data', function (input) { return __awaiter(void 0, v
                 return [4 /*yield*/, runPlugin(msg)];
             case 1:
                 result = _a.sent();
-                starter.response({ status: result === null || result === void 0 ? void 0 : result.status, data: result === null || result === void 0 ? void 0 : result.data });
+                starter.response({ status: result === null || result === void 0 ? void 0 : result.status, data: result });
                 return [2 /*return*/];
         }
     });
